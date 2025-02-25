@@ -1,8 +1,10 @@
+import path from 'path';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import webpack from 'webpack';
 
 export default {
   mode: process.env.NODE_ENV || 'development',
+  entry: './src/index.js',
   module: {
     rules: [
       {
@@ -39,6 +41,8 @@ export default {
     }),
   ],
   output: {
+    path: path.resolve(process.cwd(), 'dist'),
+    filename: 'main.js',
     clean: true,
   },
 };
