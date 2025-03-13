@@ -35,6 +35,8 @@ export default [
     plugins: { import: importPlugin },
     rules: {
       ...importPlugin.configs.recommended.rules,
+      'import/no-default-export': 'off',
+
     },
   },
   ...compat.extends('airbnb-base'),

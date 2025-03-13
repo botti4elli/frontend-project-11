@@ -1,10 +1,7 @@
-import path from 'path';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
-import webpack from 'webpack';
 
 export default {
   mode: process.env.NODE_ENV || 'development',
-  entry: './src/index.js',
   module: {
     rules: [
       {
@@ -36,13 +33,12 @@ export default {
     new HtmlWebpackPlugin({
       template: 'index.html',
     }),
-    new webpack.DefinePlugin({
-      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
-    }),
   ],
   output: {
-    path: path.resolve(process.cwd(), 'dist'),
-    filename: 'main.js',
     clean: true,
+  },
+  devServer: {
+    hot: true,
+    open: true,
   },
 };
