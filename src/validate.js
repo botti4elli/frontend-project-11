@@ -1,17 +1,30 @@
 import * as yup from 'yup';
 
-const schema = yup.object().shape({
-  url: yup
-    .string()
-    .trim()
-    .url('Ссылка должна быть валидным URL')
-    .required('URL обязателен'),
+yup.setLocale({
+  string: {
+    url: 'url_invalid',
+  },
+  mixed: {
+    required: 'url_required',
+  },
+});
+
+const schema = yup.object({
+  url: yup.string().trim().url().required(),
 });
 
 export default (url, feeds) => schema.validate({ url })
   .then(() => {
     if (feeds.has(url)) {
-      return Promise.reject(new Error('RSS уже существует'));
+      const error = new Error('rss_exists');
+      error.code = 'rss_exists';
+      return Promise.reject(error);
     }
     return Promise.resolve();
+  })
+  .catch((error) => {
+    if (error instanceof yup.ValidationError) {
+      return Promise.reject(new Error(error.message));
+    }
+    return Promise.reject(error);
   });

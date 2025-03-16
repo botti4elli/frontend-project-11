@@ -1,26 +1,56 @@
+import i18next from 'i18next';
+
+const translations = {
+  rss_added: 'rss_added',
+  url_invalid: 'url_invalid',
+  url_required: 'url_required',
+  rss_exists: 'rss_exists',
+};
+
+const renderError = (errorElement, input, errorKey) => {
+  const newInput = input;
+  const newErrorElement = errorElement;
+
+  newInput.classList.add('is-invalid');
+  newErrorElement.textContent = i18next.t(errorKey);
+  newErrorElement.classList.remove('text-success');
+  newErrorElement.classList.add('text-danger');
+};
+
+const renderSuccess = (errorElement, input) => {
+  const newInput = input;
+  const newErrorElement = errorElement;
+
+  newInput.classList.remove('is-invalid');
+  newErrorElement.textContent = i18next.t(translations.rss_added);
+  newErrorElement.classList.remove('text-danger');
+  newErrorElement.classList.add('text-success');
+};
+
+const clearFeedback = (errorElement, input) => {
+  const newInput = input;
+  const newErrorElement = errorElement;
+
+  newInput.classList.remove('is-invalid');
+  newErrorElement.textContent = '';
+  newErrorElement.classList.remove('text-danger', 'text-success');
+};
+
 export default (state, input) => {
   const feedbackElement = document.querySelector('.feedback');
 
   if (!feedbackElement) {
-    console.warn('Элемент .feedback не найден');
     return;
   }
 
   if (state.error) {
-    input.classList.add('is-invalid');
-    feedbackElement.textContent = state.error;
-    feedbackElement.classList.add('text-danger');
-    feedbackElement.classList.remove('text-success');
+    renderError(feedbackElement, input, state.error);
     return;
   }
 
-  input.classList.remove('is-invalid');
-
   if (state.success) {
-    feedbackElement.textContent = 'RSS успешно загружен';
-    feedbackElement.classList.add('text-success');
-    feedbackElement.classList.remove('text-danger');
+    renderSuccess(feedbackElement, input);
   } else {
-    feedbackElement.textContent = '';
+    clearFeedback(feedbackElement, input);
   }
 };
