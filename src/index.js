@@ -1,44 +1,49 @@
-import onChange from 'on-change';
-import i18next from 'i18next';
-import initI18n from './locales.js';
 import validate from './validate.js';
-import renderView from './view.js';
-
-const form = document.getElementById('rss-form');
-const input = document.getElementById('url-input');
-
-const state = onChange(
-  {
-    feeds: new Set(),
-    error: null,
-    success: false,
-  },
-  () => {
-    renderView(state, input);
-  },
-);
+import initView from './view.js';
+import fetchRSS from './rssLoader.js';
+import initI18n from './locales.js';
 
 initI18n().then(() => {
+  const form = document.getElementById('rss-form');
+  const input = document.getElementById('url-input');
+
+  const initialState = {
+    feeds: { byId: {}, allIds: [] },
+    posts: { byId: {}, allIds: [] },
+    urls: new Set(),
+    error: null,
+    success: null,
+  };
+
+  const state = initView(initialState, input);
+
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     const url = input.value.trim();
 
-    validate(url, state.feeds)
-      .then(() => {
-        state.error = null;
-        state.success = true;
-        state.feeds.add(url);
-        form.reset();
-        input.focus();
+    state.error = null;
+    state.success = null;
+
+    validate(url, state.urls)
+      .then(() => fetchRSS(url))
+      .then(({ feed, posts }) => {
+        state.feeds.byId[feed.id] = feed;
+        state.feeds.allIds.unshift(feed.id);
+
+        posts.forEach((post) => {
+          state.posts.byId[post.id] = post;
+          state.posts.allIds.unshift(post.id);
+        });
+
+        state.success = 'rss_added';
+        state.urls.add(url);
+        input.value = '';
       })
       .catch((err) => {
-        state.error = err.code ? i18next.t(err.code) : err.message;
-        state.success = false;
+        state.error = err.message;
+      })
+      .finally(() => {
+        input.focus();
       });
-  });
-
-  input.addEventListener('input', () => {
-    state.error = null;
-    state.success = false;
   });
 });
