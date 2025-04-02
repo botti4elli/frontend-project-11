@@ -34,6 +34,7 @@ const checkForUpdates = (state) => {
         if (newPosts.length > 0) {
           state.posts.allIds.unshift(...newPosts.map((post) => post.id));
           newPosts.forEach((post) => {
+            // eslint-disable-next-line no-param-reassign
             state.posts.byId[post.id] = post;
           });
         }

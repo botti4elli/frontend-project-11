@@ -6,6 +6,7 @@ const renderFeedback = (element, input, { type, message }) => {
   input.classList.toggle('is-invalid', type === 'error');
 
   if (message) {
+    // eslint-disable-next-line no-param-reassign
     element.textContent = message;
     element.classList.remove('d-none');
   } else {
@@ -17,6 +18,7 @@ const renderFeedback = (element, input, { type, message }) => {
 };
 
 const renderFeeds = (container, feeds) => {
+  // eslint-disable-next-line no-param-reassign
   container.innerHTML = '';
 
   if (!feeds.length) {
@@ -74,8 +76,11 @@ const renderPosts = (container, posts, readPosts, modalElements) => {
       link.classList.remove('fw-bold');
       link.classList.add('fw-normal', 'text-secondary');
 
+      // eslint-disable-next-line no-param-reassign
       modalElements.title.textContent = post.title;
+      // eslint-disable-next-line no-param-reassign
       modalElements.body.textContent = post.description;
+      // eslint-disable-next-line no-param-reassign
       modalElements.fullArticle.href = post.link;
 
       new Modal(modalElements.modal).show();
