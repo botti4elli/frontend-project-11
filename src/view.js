@@ -1,19 +1,15 @@
 import onChange from 'on-change';
 import i18next from 'i18next';
-
-import { translationKeys } from './locales.js';
+import { Modal } from 'bootstrap';
 
 const renderFeedback = (element, input, { type, message }) => {
   input.classList.toggle('is-invalid', type === 'error');
 
   if (message) {
-    // eslint-disable-next-line no-param-reassign
     element.textContent = message;
     element.classList.remove('d-none');
-    element.classList.add('d-block');
   } else {
     element.classList.add('d-none');
-    element.classList.remove('d-block');
   }
 
   element.classList.toggle('text-danger', type === 'error');
@@ -21,105 +17,106 @@ const renderFeedback = (element, input, { type, message }) => {
 };
 
 const renderFeeds = (container, feeds) => {
-  // eslint-disable-next-line no-param-reassign
   container.innerHTML = '';
 
-  if (!feeds || feeds.length === 0) {
+  if (!feeds.length) {
     container.classList.add('d-none');
     return;
   }
 
-  const title = document.createElement('h2');
-  title.className = 'mb-4';
-  title.textContent = 'Фиды';
+  container.classList.remove('d-none');
+  const feedsTitle = document.createElement('h2');
+  feedsTitle.className = 'mb-4';
+  feedsTitle.textContent = 'Фиды';
 
   const list = document.createElement('ul');
   list.className = 'list-group';
 
-  feeds.forEach((feed) => {
+  feeds.forEach(({ title, description }) => {
     const item = document.createElement('li');
     item.className = 'list-group-item border-0';
-    item.innerHTML = `
-      <h3 class="h6">${feed.title}</h3>
-      <p class="m-0 small text-muted">${feed.description}</p>
-    `;
+    item.innerHTML = `<h3 class="h6">${title}</h3><p class="m-0 small text-muted">${description}</p>`;
     list.appendChild(item);
   });
 
-  container.append(title, list);
-  container.classList.remove('d-none');
+  container.append(feedsTitle, list);
 };
 
-const renderPosts = (container, posts) => {
-  // eslint-disable-next-line no-param-reassign
-  container.innerHTML = '';
-
-  if (!posts || posts.length === 0) {
-    container.classList.add('d-none');
-    return;
-  }
-
-  const title = document.createElement('h2');
-  title.className = 'mb-4';
-  title.textContent = 'Посты';
-
-  const list = document.createElement('ul');
+const renderPosts = (container, posts, readPosts, modalElements) => {
+  const list = container.querySelector('ul') || document.createElement('ul');
   list.className = 'list-group';
 
+  const existingPostIds = new Set([...list.children].map((item) => item.dataset.id));
+  const fragment = document.createDocumentFragment();
+
   posts.forEach((post) => {
+    if (existingPostIds.has(post.id)) return;
+
     const item = document.createElement('li');
     item.className = 'list-group-item d-flex justify-content-between align-items-start border-0';
-    item.innerHTML = `
-      <a href="${post.link}" class="fw-bold" target="_blank" rel="noopener noreferrer">
-        ${post.title}
-      </a>
-      <button type="button" class="btn btn-outline-primary btn-sm">Просмотр</button>
-    `;
-    list.appendChild(item);
+    item.dataset.id = post.id;
+
+    const link = document.createElement('a');
+    link.href = post.link;
+    link.textContent = post.title;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.className = readPosts.has(post.id) ? 'fw-normal text-secondary' : 'fw-bold';
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'btn btn-outline-primary btn-sm';
+    button.textContent = i18next.t('view');
+    button.dataset.id = post.id;
+
+    button.addEventListener('click', () => {
+      readPosts.add(post.id);
+      link.classList.remove('fw-bold');
+      link.classList.add('fw-normal', 'text-secondary');
+
+      modalElements.title.textContent = post.title;
+      modalElements.body.textContent = post.description;
+      modalElements.fullArticle.href = post.link;
+
+      new Modal(modalElements.modal).show();
+    });
+
+    item.append(link, button);
+    fragment.prepend(item);
   });
 
-  container.append(title, list);
-  container.classList.remove('d-none');
+  list.prepend(fragment);
+  if (!container.contains(list)) {
+    container.appendChild(list);
+  }
 };
 
 const initView = (state, input) => {
   const feedbackEl = document.querySelector('.feedback');
   const feedsContainer = document.querySelector('.feeds');
   const postsContainer = document.querySelector('.posts');
+  const modalElements = {
+    modal: document.getElementById('modal'),
+    title: document.querySelector('.modal-title'),
+    body: document.querySelector('.modal-body'),
+    fullArticle: document.querySelector('.full-article'),
+  };
 
-  if (!feedsContainer || !postsContainer || !feedbackEl) {
-    console.error('Элементы .feeds или .posts не найдены в DOM');
-    return state;
-  }
+  return onChange(state, (path) => {
+    if (path === 'error' || path === 'success') {
+      renderFeedback(feedbackEl, input, {
+        type: path,
+        message: state[path] ? i18next.t(state[path]) : '',
+      });
+    }
 
-  return onChange(state, (path, value) => {
-    console.log('State changed:', path, value);
+    if (path.startsWith('feeds')) {
+      renderFeeds(feedsContainer, Object.values(state.feeds.byId));
+    }
 
-    switch (path) {
-      case 'error':
-        renderFeedback(feedbackEl, input, {
-          type: 'error',
-          message: value ? i18next.t(value) : '',
-        });
-        break;
-
-      case 'success':
-        renderFeedback(feedbackEl, input, {
-          type: 'success',
-          message: value ? i18next.t(translationKeys.RSS_ADDED) : '',
-        });
-        break;
-
-      case 'feeds.allIds':
-        renderFeeds(feedsContainer, state.feeds.allIds.map((id) => state.feeds.byId[id]));
-        break;
-
-      case 'posts.allIds':
-        renderPosts(postsContainer, state.posts.allIds.map((id) => state.posts.byId[id]));
-        break;
-
-      default:
-        break;
+    if (path.startsWith('posts')) {
+      // eslint-disable-next-line max-len
+      renderPosts(postsContainer, Object.values(state.posts.byId), state.ui.readPosts, modalElements);
     }
   });
 };

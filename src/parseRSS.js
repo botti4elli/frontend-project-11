@@ -1,5 +1,7 @@
 import generateId from './utils.js';
 
+const getTextContent = (element, defaultValue = '') => (element ? element.textContent.trim() : defaultValue);
+
 const parseRSS = (xmlString) => {
   const parser = new DOMParser();
   const xmlDoc = parser.parseFromString(xmlString, 'application/xml');
@@ -19,27 +21,34 @@ const parseRSS = (xmlString) => {
   const feedId = generateId();
   const feed = {
     id: feedId,
-    title: channel.querySelector('title').textContent,
-    description: channel.querySelector('description').textContent,
-    link: channel.querySelector('link').textContent,
+    title: getTextContent(channel.querySelector('title'), 'Без названия'),
+    description: getTextContent(channel.querySelector('description'), 'Описание отсутствует'),
+    link: getTextContent(channel.querySelector('link'), '#'),
   };
 
   const postsById = {};
+  const postLinks = new Set();
 
   items.forEach((item) => {
+    const link = getTextContent(item.querySelector('link'), '#');
+    const guid = getTextContent(item.querySelector('#guid'), link);
+
+    if (postLinks.has(guid)) return;
+    postLinks.add(guid);
+
     const postId = generateId();
     postsById[postId] = {
       id: postId,
       feedId,
-      title: item.querySelector('title').textContent,
-      description: item.querySelector('description').textContent,
-      link: item.querySelector('link').textContent,
+      title: getTextContent(item.querySelector('title'), 'Без названия') || 'Без названия',
+      description: getTextContent(item.querySelector('description'), 'Описание отсутствует') || 'Описание отсутствует',
+      link,
     };
   });
 
   return {
     feed,
-    posts: Object.values(postsById), // Теперь это массив
+    posts: Object.values(postsById),
   };
 };
 

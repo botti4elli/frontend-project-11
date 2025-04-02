@@ -11,6 +11,7 @@ export const translationKeys = {
   PARSE_ERROR: 'parse_error',
   SERVER_ERROR: 'server_error',
   EMPTY_RESPONSE: 'empty_response',
+  VIEW: 'view',
 };
 
 const initI18n = () => i18next.init({
@@ -22,14 +23,11 @@ const initI18n = () => i18next.init({
       translation: {
         [translationKeys.RSS_ADDED]: 'RSS успешно загружен',
         [translationKeys.URL_INVALID]: 'Ссылка должна быть валидным URL',
-        [translationKeys.URL_REQUIRED]: 'Необходимо ввести ссылку',
+        [translationKeys.URL_REQUIRED]: 'Не должно быть пустым',
         [translationKeys.RSS_EXISTS]: 'RSS уже существует',
-        [translationKeys.RSS_INVALID]: 'Некорректный RSS',
-        [translationKeys.NETWORK_ERROR]: 'Ошибка сети. Проверьте подключение',
-        [translationKeys.TIMEOUT_ERROR]: 'Превышено время ожидания ответа',
-        [translationKeys.PARSE_ERROR]: 'Ошибка разбора RSS-потока',
-        [translationKeys.SERVER_ERROR]: 'Ошибка сервера: {{status}}',
-        [translationKeys.EMPTY_RESPONSE]: 'Пустой ответ от сервера',
+        [translationKeys.RSS_INVALID]: 'Ресурс не содержит валидный RSS',
+        [translationKeys.NETWORK_ERROR]: 'Ошибка сети.',
+        [translationKeys.VIEW]: 'Просмотр',
       },
     },
   },
