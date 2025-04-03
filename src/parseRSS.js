@@ -55,6 +55,7 @@
 //       id: postId,
 //       feedId,
 //       title: getTextContent(item.querySelector('title'), 'Без названия') || 'Без названия',
+// eslint-disable-next-line max-len
 //       description: getTextContent(item.querySelector('description'), 'Описание отсутствует') || 'Описание отсутствует',
 //       link,
 //     };
@@ -82,7 +83,7 @@ const decodeEntities = (text) => {
 };
 
 const getTextContent = (element, defaultValue = '') => (
-    element ? decodeEntities(sanitizeHTML(element.textContent.trim())) : defaultValue
+  element ? decodeEntities(sanitizeHTML(element.textContent.trim())) : defaultValue
 );
 
 const parseRSS = (xmlString) => {
@@ -118,7 +119,7 @@ const parseRSS = (xmlString) => {
 
   items.forEach((item) => {
     const link = getTextContent(item.querySelector('link'), '#');
-    const guid = getTextContent(item.querySelector('guid'), link);
+    const guid = getTextContent(item.querySelector('#guid'), link);
 
     if (postLinks.has(guid)) return;
     postLinks.add(guid);
