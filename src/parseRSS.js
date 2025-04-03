@@ -1,6 +1,20 @@
 import generateId from './utils.js';
 
-const getTextContent = (element, defaultValue = '') => (element ? element.textContent.trim() : defaultValue);
+const sanitizeHTML = (html) => {
+  const temp = document.createElement('div');
+  temp.innerHTML = html;
+  return temp.textContent || temp.innerText || '';
+};
+
+const decodeEntities = (text) => {
+  const textarea = document.createElement('textarea');
+  textarea.innerHTML = text;
+  return textarea.value;
+};
+
+const getTextContent = (element, defaultValue = '') => (
+  element ? decodeEntities(sanitizeHTML(element.textContent.trim())) : defaultValue
+);
 
 const parseRSS = (xmlString) => {
   const parser = new DOMParser();
