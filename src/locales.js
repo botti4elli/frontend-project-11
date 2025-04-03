@@ -22,7 +22,7 @@ const initI18n = () => i18next.init({
     ru: {
       translation: {
         [translationKeys.RSS_ADDED]: 'RSS успешно загружен',
-        [translationKeys.URL_INVALID]: 'Ссылка должна быть валидным URL',
+        [translationKeys.URL_INVALID]: 'Ресурс не содержит валидный RSS',
         [translationKeys.URL_REQUIRED]: 'Не должно быть пустым',
         [translationKeys.RSS_EXISTS]: 'RSS уже существует',
         [translationKeys.RSS_INVALID]: 'Ресурс не содержит валидный RSS',
