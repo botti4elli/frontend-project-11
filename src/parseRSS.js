@@ -1,47 +1,21 @@
-import { parseXmlString, getTextContent, generateId } from './utils.js';
+import { parseXmlString, getTextContent } from './utils.js';
 
-const parseRSS = (xmlString) => {
-  const xmlDoc = parseXmlString(xmlString);
+export default (xmlString) => {
+  const doc = parseXmlString(xmlString);
+  const parserError = doc.querySelector('parsererror');
+  if (parserError) throw new Error('rss_invalid');
 
-  const errorNode = xmlDoc.querySelector('parsererror');
-  if (errorNode) throw new Error('rss_invalid');
+  const feedTitle = getTextContent(doc.querySelector('channel > title'));
+  const feedDescription = getTextContent(doc.querySelector('channel > description'));
 
-  const channel = xmlDoc.querySelector('channel');
-  const items = xmlDoc.querySelectorAll('item');
-  if (!channel || items.length === 0) throw new Error('rss_invalid');
+  const posts = [...doc.querySelectorAll('item')].map((item) => ({
+    title: getTextContent(item.querySelector('title')),
+    description: getTextContent(item.querySelector('description')),
+    link: getTextContent(item.querySelector('link')),
+  }));
 
-  const feedLink = getTextContent(channel.querySelector('link'), '#');
-  const feedId = generateId(feedLink);
-
-  const feed = {
-    id: feedId,
-    title: getTextContent(channel.querySelector('title'), 'Без названия'),
-    description: getTextContent(channel.querySelector('description'), 'Описание отсутствует'),
-    link: feedLink,
+  return {
+    feed: { title: feedTitle, description: feedDescription },
+    posts,
   };
-
-  const posts = [];
-  const seenGuids = new Set();
-
-  items.forEach((item) => {
-    const link = getTextContent(item.querySelector('link'), '#');
-    const guidEl = item.getElementsByTagName('guid')[0];
-    const guid = getTextContent(guidEl) || link;
-
-    if (!seenGuids.has(guid)) {
-      seenGuids.add(guid);
-
-      posts.push({
-        id: generateId(guid),
-        feedId,
-        title: getTextContent(item.querySelector('title'), 'Без названия'),
-        description: getTextContent(item.querySelector('description'), 'Описание отсутствует'),
-        link,
-      });
-    }
-  });
-
-  return { feed, posts };
 };
-
-export default parseRSS;
