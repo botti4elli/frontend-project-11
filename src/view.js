@@ -2,58 +2,67 @@ import onChange from 'on-change';
 import i18next from 'i18next';
 import { Modal } from 'bootstrap';
 
-const renderFeedback = (element, input, { type, message }) => {
-  input.classList.toggle('is-invalid', type === 'error');
+const renderFeedback = (elements, feedProcess) => {
+  const { status, message, error } = feedProcess;
 
-  if (message) {
-    // eslint-disable-next-line no-param-reassign
-    element.textContent = message;
-    element.classList.remove('d-none');
-  } else {
-    element.classList.add('d-none');
+  elements.input.classList.toggle('is-invalid', status === 'error');
+
+  if (status === 'idle' || !(message || error)) {
+    elements.feedback.classList.add('d-none');
+    return;
   }
 
-  element.classList.toggle('text-danger', type === 'error');
-  element.classList.toggle('text-success', type === 'success');
+  // eslint-disable-next-line no-param-reassign
+  elements.feedback.textContent = i18next.t(error || message);
+  elements.feedback.classList.remove('d-none');
+  elements.feedback.classList.toggle('text-danger', status === 'error');
+  elements.feedback.classList.toggle('text-success', status === 'success');
+  elements.feedback.classList.toggle('text-info', status === 'loading');
 };
 
 const renderFeeds = (container, feeds) => {
   // eslint-disable-next-line no-param-reassign
   container.innerHTML = '';
-
   if (!feeds.length) {
     container.classList.add('d-none');
     return;
   }
 
   container.classList.remove('d-none');
-  const feedsTitle = document.createElement('h2');
-  feedsTitle.className = 'mb-4';
-  feedsTitle.textContent = 'Фиды';
+  const title = document.createElement('h2');
+  title.className = 'mb-4';
+  title.textContent = i18next.t('feeds_title');
 
   const list = document.createElement('ul');
   list.className = 'list-group';
 
-  feeds.forEach(({ title, description }) => {
+  feeds.forEach((feed) => {
     const item = document.createElement('li');
     item.className = 'list-group-item border-0';
-    item.innerHTML = `<h3 class="h6">${title}</h3><p class="m-0 small text-muted">${description}</p>`;
+    item.innerHTML = `<h3 class="h6">${feed.title}</h3><p class="m-0 small text-muted">${feed.description}</p>`;
     list.appendChild(item);
   });
 
-  container.append(feedsTitle, list);
+  container.append(title, list);
 };
 
-const renderPosts = (container, posts, readPosts, modalElements) => {
-  const list = container.querySelector('ul') || document.createElement('ul');
+const renderPosts = (container, posts, readPosts) => {
+  // eslint-disable-next-line no-param-reassign
+  container.innerHTML = '';
+  if (!posts.length) {
+    container.classList.add('d-none');
+    return;
+  }
+
+  container.classList.remove('d-none');
+  const title = document.createElement('h2');
+  title.className = 'mb-4';
+  title.textContent = i18next.t('posts_title');
+
+  const list = document.createElement('ul');
   list.className = 'list-group';
 
-  const existingPostIds = new Set([...list.children].map((item) => item.dataset.id));
-  const fragment = document.createDocumentFragment();
-
   posts.forEach((post) => {
-    if (existingPostIds.has(post.id)) return;
-
     const item = document.createElement('li');
     item.className = 'list-group-item d-flex justify-content-between align-items-start border-0';
     item.dataset.id = post.id;
@@ -71,57 +80,50 @@ const renderPosts = (container, posts, readPosts, modalElements) => {
     button.textContent = i18next.t('view');
     button.dataset.id = post.id;
 
-    button.addEventListener('click', () => {
-      readPosts.add(post.id);
-      link.classList.remove('fw-bold');
-      link.classList.add('fw-normal', 'text-secondary');
-
-      // eslint-disable-next-line no-param-reassign
-      modalElements.title.textContent = post.title;
-      // eslint-disable-next-line no-param-reassign
-      modalElements.body.textContent = post.description;
-      // eslint-disable-next-line no-param-reassign
-      modalElements.fullArticle.href = post.link;
-
-      new Modal(modalElements.modal).show();
-    });
-
     item.append(link, button);
-    fragment.prepend(item);
+    list.appendChild(item);
   });
 
-  list.prepend(fragment);
-  if (!container.contains(list)) {
-    container.appendChild(list);
-  }
+  container.append(title, list);
 };
 
-const initView = (state, input) => {
-  const feedbackEl = document.querySelector('.feedback');
-  const feedsContainer = document.querySelector('.feeds');
-  const postsContainer = document.querySelector('.posts');
+const renderModal = (modalElements, modalData) => {
+  if (!modalData) return;
+
+  // eslint-disable-next-line no-param-reassign
+  modalElements.title.textContent = modalData.title;
+  // eslint-disable-next-line no-param-reassign
+  modalElements.body.textContent = modalData.body;
+  // eslint-disable-next-line no-param-reassign
+  modalElements.link.href = modalData.link;
+  new Modal(modalElements.modal).show();
+};
+
+const initView = (state, elements) => {
   const modalElements = {
     modal: document.getElementById('modal'),
     title: document.querySelector('.modal-title'),
     body: document.querySelector('.modal-body'),
-    fullArticle: document.querySelector('.full-article'),
+    link: document.querySelector('.full-article'),
   };
 
   return onChange(state, (path) => {
-    if (path === 'error' || path === 'success') {
-      renderFeedback(feedbackEl, input, {
-        type: path,
-        message: state[path] ? i18next.t(state[path]) : '',
-      });
+    if (path === 'ui.feedProcess') {
+      renderFeedback(elements, state.ui.feedProcess);
     }
 
     if (path.startsWith('feeds')) {
-      renderFeeds(feedsContainer, Object.values(state.feeds.byId));
+      const feeds = state.feeds.allIds.map((id) => state.feeds.byId[id]);
+      renderFeeds(elements.feedsContainer, feeds);
     }
 
-    if (path.startsWith('posts')) {
-      // eslint-disable-next-line max-len
-      renderPosts(postsContainer, Object.values(state.posts.byId), state.ui.readPosts, modalElements);
+    if (path.startsWith('posts') || path === 'ui.readPosts') {
+      const posts = state.posts.allIds.map((id) => state.posts.byId[id]);
+      renderPosts(elements.postsContainer, posts, state.ui.readPosts);
+    }
+
+    if (path === 'ui.modal') {
+      renderModal(modalElements, state.ui.modal);
     }
   });
 };
